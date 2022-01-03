@@ -201,8 +201,7 @@ class ProphetModel(Model):
 
     def predict(self, df: pd.DataFrame):
         fcst = self.model.predict(df=df)
-        fcst_df = pd.DataFrame({"time": fcst.ds, "y": df.y, "yhat1": fcst.yhat})
-        return fcst_df
+        return pd.DataFrame({"time": fcst.ds, "y": df.y, "yhat1": fcst.yhat})
 
 
 @dataclass
@@ -301,8 +300,8 @@ class Experiment(ABC):
         result_test = self.metadata.copy()
         for metric in self.metrics:
             # todo: parallelize
-            n_yhats_train = sum(["yhat" in colname for colname in fcst_train.columns])
-            n_yhats_test = sum(["yhat" in colname for colname in fcst_test.columns])
+            n_yhats_train = sum("yhat" in colname for colname in fcst_train.columns)
+            n_yhats_test = sum("yhat" in colname for colname in fcst_test.columns)
 
             assert n_yhats_train == n_yhats_test, "Dimensions of fcst dataframe faulty."
 
@@ -509,7 +508,7 @@ class Benchmark(ABC):
                 log.info("exp {}/{}: {}".format(i + 1, len(self.experiments), exp.experiment_name))
         log.info("---- Staring Series of {} Experiments ----".format(len(self.experiments)))
         if self.num_processes > 1 and len(self.experiments) > 1:
-            if not all([exp.num_processes == 1 for exp in self.experiments]):
+            if any(exp.num_processes != 1 for exp in self.experiments):
                 raise ValueError("can not set multiprocessing in experiments and Benchmark.")
             with Pool(self.num_processes) as pool:
                 args_list = [(exp, verbose, i + 1) for i, exp in enumerate(self.experiments)]

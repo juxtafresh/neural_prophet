@@ -86,7 +86,7 @@ class TimeDataset(Dataset):
                 sample[key] = OrderedDict({})
                 for name, period_features in self.inputs[key].items():
                     sample[key][name] = period_features[index]
-            elif key == "events" or key == "regressors":
+            elif key in ["events", "regressors"]:
                 sample[key] = OrderedDict({})
                 for mode, features in self.inputs[key].items():
                     sample[key][mode] = features[index, :, :]
@@ -308,10 +308,13 @@ def fourier_series_t(t, period, series_order):
     Returns:
         Matrix with seasonality features.
     """
-    features = np.column_stack(
-        [fun((2.0 * (i + 1) * np.pi * t / period)) for i in range(series_order) for fun in (np.sin, np.cos)]
+    return np.column_stack(
+        [
+            fun((2.0 * (i + 1) * np.pi * t / period))
+            for i in range(series_order)
+            for fun in (np.sin, np.cos)
+        ]
     )
-    return features
 
 
 def make_country_specific_holidays_df(year_list, country):
@@ -481,7 +484,7 @@ def seasonal_features_from_dates(dates, season_config):
 def merging_dataset(dataset):
     all_items = []
     for data in dataset:
-        for i in range(0, len(data)):
+        for i in range(len(data)):
             all_items.append(data[i])
     return all_items
 
@@ -494,5 +497,4 @@ class GlobalTimeDataset(Dataset):
         return len(self.combined_timedataset)
 
     def __getitem__(self, idx):
-        sample = self.combined_timedataset[idx]
-        return sample
+        return self.combined_timedataset[idx]

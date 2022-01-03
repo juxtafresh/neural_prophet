@@ -96,10 +96,7 @@ class MetricsCollection:
         """
         metrics = OrderedDict({})
         for m in self.all:
-            if loc is None:
-                metrics[m.name] = m.stored_values
-            else:
-                metrics[m.name] = [m.stored_values[loc]]
+            metrics[m.name] = m.stored_values if loc is None else [m.stored_values[loc]]
         return metrics
 
     def get_stored_as_df(self, loc=None):
@@ -111,8 +108,7 @@ class MetricsCollection:
         Returns:
             pd.Dataframe
         """
-        metrics = pd.DataFrame(self.get_stored(loc=loc))
-        return metrics
+        return pd.DataFrame(self.get_stored(loc=loc))
 
     def add_specific_target(self, target_pos):
         """Duplicates BatchMetrics with their version for a specific target.
@@ -140,10 +136,9 @@ class MetricsCollection:
 
     def __str__(self):
         """Nice-prints current values"""
-        metrics_string = pd.DataFrame({**self.compute()}, index=[0]).to_string(
+        return pd.DataFrame({**self.compute()}, index=[0]).to_string(
             float_format=lambda x: "{:6.3f}".format(x)
         )
-        return metrics_string
 
     def print(self, loc=None):
         """Nice-prints stored values"""
@@ -182,7 +177,6 @@ class Metric:
             target: actual values
         """
         self.total_updates += 1
-        pass
 
     def compute(self, save=False):
         """calculates the current value of the metric
@@ -277,8 +271,7 @@ class BatchMetric(Metric):
         """
         if specific_column is None and self.specific_column is not None:
             specific_column = self.specific_column
-        new_cls = self.__class__(specific_column=specific_column)
-        return new_cls
+        return self.__class__(specific_column=specific_column)
 
 
 class MAE(BatchMetric):

@@ -112,10 +112,7 @@ def plot_components(m, fcst, forecast_in_focus=None, one_period_per_season=True,
 
     # Identify components to be plotted
     # as dict, minimum: {plot_name, comp_name}
-    components = []
-
-    # Plot  trend
-    components.append({"plot_name": "Trend", "comp_name": "trend"})
+    components = [{"plot_name": "Trend", "comp_name": "trend"}]
 
     # Plot  seasonalities, if present
     if m.model.config_season is not None:
@@ -222,7 +219,7 @@ def plot_components(m, fcst, forecast_in_focus=None, one_period_per_season=True,
                 )
 
     npanel = len(components)
-    figsize = figsize if figsize else (10, 3 * npanel)
+    figsize = figsize or (10, 3 * npanel)
     fig, axes = plt.subplots(npanel, 1, facecolor="w", figsize=figsize)
     if npanel == 1:
         axes = [axes]
@@ -369,18 +366,14 @@ def plot_multiforecast_component(
     col_names = [col_name for col_name in fcst.columns if col_name.startswith(comp_name)]
     if num_overplot is not None:
         assert num_overplot <= len(col_names)
+        alpha_min = 0.2
+        alpha_softness = 1.2
         for i in list(range(num_overplot))[::-1]:
             y = fcst["{}{}".format(comp_name, i + 1)]
             notnull = y.notnull()
             y = y.values
-            alpha_min = 0.2
-            alpha_softness = 1.2
             alpha = alpha_min + alpha_softness * (1.0 - alpha_min) / (i + 1.0 * alpha_softness)
-            if "residual" not in comp_name:
-                pass
-                # fcst_t=fcst_t[notnull]
-                # y = y[notnull]
-            else:
+            if "residual" in comp_name:
                 y[-1] = 0
             if bar:
                 artists += ax.bar(fcst_t, y, width=1.00, color="#0072B2", alpha=alpha)

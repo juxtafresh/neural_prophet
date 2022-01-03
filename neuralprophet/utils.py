@@ -39,8 +39,7 @@ def reg_func_trend(weights, threshold=None):
     abs_weights = torch.abs(weights)
     if threshold is not None and not math.isclose(threshold, 0):
         abs_weights = torch.clamp(abs_weights - threshold, min=0.0)
-    reg = torch.sum(abs_weights).squeeze()
-    return reg
+    return torch.sum(abs_weights).squeeze()
 
 
 def reg_func_season(weights):
@@ -251,8 +250,7 @@ def create_event_names_for_offsets(event_name, offset):
     Returns:
         offset_name (string): A name created for the offset of the event
     """
-    offset_name = "{}_{}{}".format(event_name, "+" if offset >= 0 else "-", abs(offset))
-    return offset_name
+    return "{}_{}{}".format(event_name, "+" if offset >= 0 else "-", abs(offset))
 
 
 def regressors_config_to_model_dims(regressors_config):
@@ -267,37 +265,35 @@ def regressors_config_to_model_dims(regressors_config):
     """
     if regressors_config is None:
         return None
-    else:
-        additive_regressors = []
-        multiplicative_regressors = []
+    additive_regressors = []
+    multiplicative_regressors = []
 
-        if regressors_config is not None:
-            for regressor, configs in regressors_config.items():
-                mode = configs.mode
-                if mode == "additive":
-                    additive_regressors.append(regressor)
-                else:
-                    multiplicative_regressors.append(regressor)
+    for regressor, configs in regressors_config.items():
+        mode = configs.mode
+        if mode == "additive":
+            additive_regressors.append(regressor)
+        else:
+            multiplicative_regressors.append(regressor)
 
-        # sort based on event_delim
-        regressors_dims = pd.DataFrame()
-        if additive_regressors:
-            additive_regressors = sorted(additive_regressors)
-            additive_regressors_dims = pd.DataFrame(data=additive_regressors, columns=["regressors"])
-            additive_regressors_dims["mode"] = "additive"
-            regressors_dims = additive_regressors_dims
+    # sort based on event_delim
+    regressors_dims = pd.DataFrame()
+    if additive_regressors:
+        additive_regressors = sorted(additive_regressors)
+        additive_regressors_dims = pd.DataFrame(data=additive_regressors, columns=["regressors"])
+        additive_regressors_dims["mode"] = "additive"
+        regressors_dims = additive_regressors_dims
 
-        if multiplicative_regressors:
-            multiplicative_regressors = sorted(multiplicative_regressors)
-            multiplicative_regressors_dims = pd.DataFrame(data=multiplicative_regressors, columns=["regressors"])
-            multiplicative_regressors_dims["mode"] = "multiplicative"
-            regressors_dims = regressors_dims.append(multiplicative_regressors_dims)
+    if multiplicative_regressors:
+        multiplicative_regressors = sorted(multiplicative_regressors)
+        multiplicative_regressors_dims = pd.DataFrame(data=multiplicative_regressors, columns=["regressors"])
+        multiplicative_regressors_dims["mode"] = "multiplicative"
+        regressors_dims = regressors_dims.append(multiplicative_regressors_dims)
 
-        regressors_dims_dic = OrderedDict({})
-        # convert to dict format
-        for index, row in regressors_dims.iterrows():
-            regressors_dims_dic[row["regressors"]] = {"mode": row["mode"], "regressor_index": index}
-        return regressors_dims_dic
+    regressors_dims_dic = OrderedDict({})
+    # convert to dict format
+    for index, row in regressors_dims.iterrows():
+        regressors_dims_dic[row["regressors"]] = {"mode": row["mode"], "regressor_index": index}
+    return regressors_dims_dic
 
 
 def set_auto_seasonalities(df, season_config, local_modeling=False):
@@ -319,13 +315,14 @@ def set_auto_seasonalities(df, season_config, local_modeling=False):
         season_config (configure.AllSeason): processed NeuralProphet seasonal model configuration
 
     """
-    if isinstance(df, list) and local_modeling is False:
-        df, _ = join_dataframes(df)
-        df = df.sort_values("ds")
-        df.drop_duplicates(inplace=True, keep="first", subset=["ds"])
+    if isinstance(df, list):
+        if local_modeling is False:
+            df, _ = join_dataframes(df)
+            df = df.sort_values("ds")
+            df.drop_duplicates(inplace=True, keep="first", subset=["ds"])
 
-    elif isinstance(df, list) and local_modeling is True:
-        log.error("Local modeling for set_auto_seasonalities is not implemented yet")
+        elif local_modeling is True:
+            log.error("Local modeling for set_auto_seasonalities is not implemented yet")
     dates = df["ds"].copy(deep=True)
 
     log.debug("seasonality config received: {}".format(season_config))
@@ -380,8 +377,7 @@ def print_epoch_metrics(metrics, val_metrics=None, e=0):
         },
         index=[e + 1],
     )
-    metrics_string = metrics_df.to_string(float_format=lambda x: "{:6.3f}".format(x))
-    return metrics_string
+    return metrics_df.to_string(float_format=lambda x: "{:6.3f}".format(x))
 
 
 def fcst_df_to_last_forecast(fcst, n_last=1):

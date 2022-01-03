@@ -15,16 +15,11 @@ class ShiftScale:
 
 
 def copy_list(df_list):
-    df_list_copy = [df.copy(deep=True) for df in df_list]
-    return df_list_copy
+    return [df.copy(deep=True) for df in df_list]
 
 
 def create_df_list(df):
-    if isinstance(df, list):
-        df_list = copy_list(df)
-    else:
-        df_list = [df.copy(deep=True)]
-    return df_list
+    return copy_list(df) if isinstance(df, list) else [df.copy(deep=True)]
 
 
 def join_dataframes(df_list):
@@ -37,12 +32,10 @@ def join_dataframes(df_list):
         df_joined: Dataframe with concatenated episodes
         episodes: list containing episodes of each timestamp
     """
-    cont = 0
     episodes = []
-    for i in df_list:
+    for cont, i in enumerate(df_list):
         s = ["Ep" + str(cont)]
-        episodes = episodes + s * len(i)
-        cont += 1
+        episodes += s * len(i)
     df_joined = pd.concat(df_list)
     return df_joined, episodes
 
@@ -158,7 +151,7 @@ def init_data_params(
         df_list = copy_list(df)
         if local_modeling:
             # Local Normalization
-            data_params = list()
+            data_params = []
             for df in df_list:
                 data_params.append(
                     data_params_definition(df, normalize, covariates_config, regressor_config, events_config)
@@ -280,7 +273,7 @@ def normalize(df, data_params, local_modeling=False):
                         len(data_params), len(df_list)
                     )
                 )
-            df_list_norm = list()
+            df_list_norm = []
             for df, df_data_params in zip(df_list, data_params):
                 df_list_norm.append(_normalization(df, df_data_params))
             df = df_list_norm
@@ -381,7 +374,7 @@ def check_dataframe(df, check_y=True, covariates=None, regressors=None, events=N
         pd.DataFrame or list of pd.DataFrame
     """
     df_list = create_df_list(df)
-    checked_df = list()
+    checked_df = []
     for df in df_list:
         checked_df.append(_check_dataframe(df, check_y, covariates, regressors, events))
     df = checked_df
@@ -415,7 +408,7 @@ def crossvalidation_split_df(df, n_lags, n_forecasts, k, fold_pct, fold_overlap_
     assert min_train >= samples_fold
     folds = []
     df_fold = df.copy(deep=True)
-    for i in range(k, 0, -1):
+    for _ in range(k, 0, -1):
         df_train, df_val = split_df(df_fold, n_lags, n_forecasts, valid_p=samples_fold, inputs_overbleed=True)
         folds.append((df_train, df_val))
         split_idx = len(df_fold) - samples_fold + samples_overlap
@@ -498,8 +491,8 @@ def find_time_threshold(df_list, n_lags, valid_p, inputs_overbleed):
 
 
 def split_considering_timestamp(df_list, threshold_time_stamp):
-    df_train = list()
-    df_val = list()
+    df_train = []
+    df_val = []
     for df in df_list:
         if df["ds"].max() < threshold_time_stamp:
             df_train.append(df.reset_index(drop=True))
@@ -531,19 +524,18 @@ def split_df(df, n_lags, n_forecasts, valid_p=0.2, inputs_overbleed=True, local_
     """
     df_list = create_df_list(df)
     if local_modeling:
-        df_train_list = list()
-        df_val_list = list()
+        df_train_list = []
+        df_val_list = []
         for df in df_list:
             df_train, df_val = _split_df(df, n_lags, n_forecasts, valid_p, inputs_overbleed)
             df_train_list.append(df_train)
             df_val_list.append(df_val)
         df_train, df_val = df_train_list, df_val_list
+    elif len(df_list) == 1:
+        df_train, df_val = _split_df(df_list[0], n_lags, n_forecasts, valid_p, inputs_overbleed)
     else:
-        if len(df_list) == 1:
-            df_train, df_val = _split_df(df_list[0], n_lags, n_forecasts, valid_p, inputs_overbleed)
-        else:
-            threshold_time_stamp = find_time_threshold(df_list, n_lags, valid_p, inputs_overbleed)
-            df_train, df_val = split_considering_timestamp(df_list, threshold_time_stamp)
+        threshold_time_stamp = find_time_threshold(df_list, n_lags, valid_p, inputs_overbleed)
+        df_train, df_val = split_considering_timestamp(df_list, threshold_time_stamp)
     df_train = df_train[0] if len(df_train) == 1 else df_train
     df_val = df_val[0] if len(df_val) == 1 else df_val
     return df_train, df_val
@@ -580,9 +572,8 @@ def make_future_df(
             # Todo: iterate over regressor_config instead
             future_df[regressor] = regressors_df[regressor]
     for column in df_columns:
-        if column not in future_df.columns:
-            if column != "t" and column != "y_scaled":
-                future_df[column] = None
+        if column not in future_df.columns and column not in ["t", "y_scaled"]:
+            future_df[column] = None
     future_df.reset_index(drop=True, inplace=True)
     return future_df
 
@@ -662,8 +653,7 @@ def get_freq_dist(ds_col):
          tuple with numeric delta values (ms) and distribution of frequency counts
     """
     converted_ds = pd.to_datetime(ds_col).view(dtype=np.int64)
-    diff_ds = np.unique(converted_ds.diff(), return_counts=True)
-    return diff_ds
+    return np.unique(converted_ds.diff(), return_counts=True)
 
 
 def convert_str_to_num_freq(freq_str):
@@ -676,14 +666,10 @@ def convert_str_to_num_freq(freq_str):
         frequency numeric delta in ms
     """
     if freq_str is None:
-        freq_num = 0
-    else:
-        aux_ts = pd.DataFrame(pd.date_range("1994-01-01", periods=100, freq=freq_str))
-        frequencies, distribution = get_freq_dist(aux_ts[0])
-        freq_num = frequencies[np.argmax(distribution)]
-        # if freq_str == "B" or freq_str == "BH":  # exception - Business day and Business hour
-        #     freq_num = freq_num + 0.777
-    return freq_num
+        return 0
+    aux_ts = pd.DataFrame(pd.date_range("1994-01-01", periods=100, freq=freq_str))
+    frequencies, distribution = get_freq_dist(aux_ts[0])
+    return frequencies[np.argmax(distribution)]
 
 
 def convert_num_to_str_freq(freq_num, initial_time_stamp):
@@ -697,8 +683,7 @@ def convert_num_to_str_freq(freq_num, initial_time_stamp):
         frequency tag (str)
     """
     aux_ts = pd.date_range(initial_time_stamp, periods=100, freq=pd.to_timedelta(freq_num))
-    freq_str = pd.infer_freq(aux_ts)
-    return freq_str
+    return pd.infer_freq(aux_ts)
 
 
 def get_dist_considering_two_freqs(dist):
@@ -736,16 +721,14 @@ def _infer_frequency(df, freq, min_freq_percentage):
     """
     frequencies, distribution = get_freq_dist(df["ds"])
     # exception - monthly df (31 days freq or 30 days freq)
-    if frequencies[np.argmax(distribution)] == 2.6784e15 or frequencies[np.argmax(distribution)] == 2.592e15:
+    if frequencies[np.argmax(distribution)] in [2.6784e15, 2.592e15]:
         dominant_freq_percentage = get_dist_considering_two_freqs(distribution) / len(df["ds"])
         num_freq = 2.6784e15
         inferred_freq = "MS" if pd.to_datetime(df["ds"][0]).day < 15 else "M"
-    # exception - yearly df (365 days freq or 366 days freq)
-    elif frequencies[np.argmax(distribution)] == 3.1536e16 or frequencies[np.argmax(distribution)] == 3.16224e16:
+    elif frequencies[np.argmax(distribution)] in [3.1536e16, 3.16224e16]:
         dominant_freq_percentage = get_dist_considering_two_freqs(distribution) / len(df["ds"])
         num_freq = 3.1536e16
         inferred_freq = "YS" if pd.to_datetime(df["ds"][0]).day < 15 else "Y"
-    # exception - quaterly df (most common == 92 days - 3rd,4th quarters and second most common == 91 days 2nd quarter and 1st quarter in leap year)
     elif (
         frequencies[np.argmax(distribution)] == 7.9488e15
         and frequencies[np.argsort(distribution, axis=0)[-2]] == 7.8624e15
@@ -753,7 +736,6 @@ def _infer_frequency(df, freq, min_freq_percentage):
         dominant_freq_percentage = get_dist_considering_two_freqs(distribution) / len(df["ds"])
         num_freq = 7.9488e15
         inferred_freq = "QS" if pd.to_datetime(df["ds"][0]).day < 15 else "Q"
-    # exception - Business day (most common == day delta and second most common == 3 days delta and second most common is at least 12% of the deltas)
     elif (
         frequencies[np.argmax(distribution)] == 8.64e13
         and frequencies[np.argsort(distribution, axis=0)[-2]] == 2.592e14
@@ -762,7 +744,6 @@ def _infer_frequency(df, freq, min_freq_percentage):
         dominant_freq_percentage = get_dist_considering_two_freqs(distribution) / len(df["ds"])
         num_freq = 8.64e13
         inferred_freq = "B"
-    # exception - Business hour (most common == hour delta and second most common == 17 hours delta and second most common is at least 8% of the deltas)
     elif (
         frequencies[np.argmax(distribution)] == 3.6e12
         and frequencies[np.argsort(distribution, axis=0)[-2]] == 6.12e13
@@ -781,7 +762,7 @@ def _infer_frequency(df, freq, min_freq_percentage):
             inferred_freq, np.round(dominant_freq_percentage * 100, 3)
         )
     )
-    ideal_freq_exists = True if dominant_freq_percentage >= min_freq_percentage else False
+    ideal_freq_exists = dominant_freq_percentage >= min_freq_percentage
     if ideal_freq_exists:
         # if major freq exists
         if freq == "auto":  # automatically set df freq to inferred freq
@@ -789,26 +770,25 @@ def _infer_frequency(df, freq, min_freq_percentage):
             log.info("Dataframe freq automatically defined as {}".format(freq_str))
         else:
             freq_str = freq
-            if convert_str_to_num_freq(freq) != convert_str_to_num_freq(
+            if convert_str_to_num_freq(freq_str) != convert_str_to_num_freq(
                 inferred_freq
             ):  # check if given freq is the major
                 log.warning("Defined frequency {} is different than major frequency {}".format(freq_str, inferred_freq))
             else:
                 log.info("Defined frequency is equal to major frequency - {}".format(freq_str))
+    elif freq == "auto":
+        log.warning(
+            "The auto-frequency feature is not able to detect the following frequencies: SM, BM, CBM, SMS, BMS, CBMS, BQ, BQS, BA, or, BAS. If the frequency of the dataframe is any of the mentioned please define it manually."
+        )
+        raise ValueError("Detected multiple frequencies in the timeseries please pre-process data.")
     else:
-        # if ideal freq does not exist
-        if freq == "auto":
-            log.warning(
-                "The auto-frequency feature is not able to detect the following frequencies: SM, BM, CBM, SMS, BMS, CBMS, BQ, BQS, BA, or, BAS. If the frequency of the dataframe is any of the mentioned please define it manually."
+        freq_str = freq
+        log.warning(
+            "Dataframe has multiple frequencies. It will be resampled according to given freq {}. Ignore message if actual frequency is any of the following:  SM, BM, CBM, SMS, BMS, CBMS, BQ, BQS, BA, or, BAS.".format(
+                freq_str
             )
-            raise ValueError("Detected multiple frequencies in the timeseries please pre-process data.")
-        else:
-            freq_str = freq
-            log.warning(
-                "Dataframe has multiple frequencies. It will be resampled according to given freq {}. Ignore message if actual frequency is any of the following:  SM, BM, CBM, SMS, BMS, CBMS, BQ, BQS, BA, or, BAS.".format(
-                    freq
-                )
-            )
+        )
+
     return freq_str
 
 
@@ -829,9 +809,7 @@ def infer_frequency(df, freq, n_lags, min_freq_percentage=0.7):
     """
 
     df_list = create_df_list(df)
-    freq_df = list()
-    for df in df_list:
-        freq_df.append(_infer_frequency(df, freq, min_freq_percentage))
+    freq_df = [_infer_frequency(df, freq, min_freq_percentage) for df in df_list]
     if len(set(freq_df)) != 1 and n_lags > 0:
         raise ValueError(
             "One or more dataframes present different major frequencies, please make sure all dataframes present the same major frequency for auto-regression"

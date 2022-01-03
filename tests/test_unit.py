@@ -91,8 +91,8 @@ def test_time_dataset():
 
 
 def test_normalize():
+    length = 1000
     for add in [0, -1, 0.00000001, -0.99999999]:
-        length = 1000
         days = pd.date_range(start="2017-01-01", periods=length)
         y = np.zeros(length)
         y[1] = 1
@@ -124,7 +124,7 @@ def test_add_lagged_regressors():
         "2": ["B"],
         "3": ["A", "B", "C"],
     }
-    for key, value in col_dict.items():
+    for value in col_dict.values():
         log.debug(value)
         if isinstance(value, list):
             feats = np.array(["ds", "y"] + value)
@@ -183,12 +183,13 @@ def test_train_speed_custom():
     epochs = 4
     learning_rate = 1.0
     check = {
-        "-2": (int(batch_size / 4), int(epochs * 4), learning_rate / 4),
-        "-1": (int(batch_size / 2), int(epochs * 2), learning_rate / 2),
+        "-2": (batch_size // 4, int(epochs * 4), learning_rate / 4),
+        "-1": (batch_size // 2, int(epochs * 2), learning_rate / 2),
         "0": (batch_size, epochs, learning_rate),
-        "1": (int(batch_size * 2), max(1, int(epochs / 2)), learning_rate * 2),
-        "2": (int(batch_size * 4), max(1, int(epochs / 4)), learning_rate * 4),
+        "1": (int(batch_size * 2), max(1, epochs // 2), learning_rate * 2),
+        "2": (int(batch_size * 4), max(1, epochs // 4), learning_rate * 4),
     }
+
     for train_speed in [-1, 0, 2]:
         m = NeuralProphet(
             learning_rate=learning_rate,
@@ -214,12 +215,13 @@ def test_train_speed_auto():
     batch_size = 16
     epochs = 320
     check2 = {
-        "-2": (int(batch_size / 4), int(epochs * 4)),
-        "-1": (int(batch_size / 2), int(epochs * 2)),
+        "-2": (batch_size // 4, int(epochs * 4)),
+        "-1": (batch_size // 2, int(epochs * 2)),
         "0": (batch_size, epochs),
-        "1": (int(batch_size * 2), int(epochs / 2)),
-        "2": (int(batch_size * 4), int(epochs / 4)),
+        "1": (int(batch_size * 2), epochs // 2),
+        "2": (int(batch_size * 4), epochs // 4),
     }
+
     for train_speed in [2]:
         m = NeuralProphet(
             train_speed=train_speed,
@@ -288,12 +290,12 @@ def test_cv():
         total_samples = len(df) - n_lags - (2 * n_forecasts) + 2
         val_fold_each = max(1, int(total_samples * valid_fold_pct))
         overlap_each = int(fold_overlap_pct * val_fold_each)
-        assert all([x == val_fold_each for x in val_folds_samples])
+        assert all(x == val_fold_each for x in val_folds_samples)
         train_folds_should = [
             total_samples - val_fold_each - (valid_fold_num - i - 1) * (val_fold_each - overlap_each)
             for i in range(valid_fold_num)
         ]
-        assert all([x == y for (x, y) in zip(train_folds_samples, train_folds_should)])
+        assert all(x == y for (x, y) in zip(train_folds_samples, train_folds_should))
         log.debug("total_samples: {}".format(total_samples))
         log.debug("val_fold_each: {}".format(val_fold_each))
         log.debug("overlap_each: {}".format(overlap_each))
