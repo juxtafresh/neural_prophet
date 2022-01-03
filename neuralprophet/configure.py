@@ -49,9 +49,7 @@ class Train:
                 raise NotImplementedError("Loss function {} name not defined".format(self.loss_func))
         elif callable(self.loss_func):
             pass
-        elif issubclass(self.loss_func.__class__, torch.nn.modules.loss._Loss):
-            pass
-        else:
+        elif not issubclass(self.loss_func.__class__, torch.nn.modules.loss._Loss):
             raise NotImplementedError("Loss function {} not found".format(self.loss_func))
 
     def set_auto_batch_epoch(
@@ -127,16 +125,15 @@ class Train:
         else:
             reg_progress = (progress - reg_start_pct) / (reg_full_pct - reg_start_pct)
         if reg_progress <= 0:
-            delay_weight = 0
+            return 0
         elif reg_progress < 1:
-            delay_weight = 1 - (1 + np.cos(np.pi * reg_progress)) / 2.0
+            return 1 - (1 + np.cos(np.pi * reg_progress)) / 2.0
         else:
-            delay_weight = 1
-        return delay_weight
+            return 1
 
     def find_learning_rate(self, model, dataset, repeat: int = 3):
         lrs = []
-        for i in range(repeat):
+        for _ in range(repeat):
             lr = utils_torch.lr_range_test(
                 model,
                 dataset,
@@ -145,9 +142,8 @@ class Train:
                 batch_size=self.batch_size,
             )
             lrs.append(lr)
-        lrs_log10_mean = sum([np.log10(x) for x in lrs]) / repeat
-        learning_rate = 10 ** lrs_log10_mean
-        return learning_rate
+        lrs_log10_mean = sum(np.log10(x) for x in lrs) / repeat
+        return 10 ** lrs_log10_mean
 
 
 @dataclass
@@ -196,9 +192,8 @@ class Trend:
                 self.trend_reg = 0
                 if self.trend_reg_threshold > 0:
                     log.info("Trend reg threshold ignored due to no changepoints.")
-        else:
-            if self.trend_reg_threshold is not None and self.trend_reg_threshold > 0:
-                log.info("Trend reg threshold ignored due to reg lambda <= 0.")
+        elif self.trend_reg_threshold is not None and self.trend_reg_threshold > 0:
+            log.info("Trend reg threshold ignored due to reg lambda <= 0.")
 
 
 @dataclass
@@ -253,11 +248,14 @@ class AR:
         Returns:
             regularization loss, scalar
         """
-        if original:
-            reg = torch.div(2.0, 1.0 + torch.exp(-2 * (1e-9 + torch.abs(weights)).pow(1 / 2.0))) - 1.0
-        else:
-            reg = utils_torch.penalize_nonzero(weights, eagerness=3, acceptance=1.0)
-        return reg
+        return (
+            torch.div(
+                2.0, 1.0 + torch.exp(-2 * (1e-9 + torch.abs(weights)).pow(1 / 2.0))
+            )
+            - 1.0
+            if original
+            else utils_torch.penalize_nonzero(weights, eagerness=3, acceptance=1.0)
+        )
 
 
 @dataclass
@@ -267,9 +265,8 @@ class Covar:
     normalize: (bool, str)
 
     def __post_init__(self):
-        if self.reg_lambda is not None:
-            if self.reg_lambda < 0:
-                raise ValueError("regularization must be >= 0")
+        if self.reg_lambda is not None and self.reg_lambda < 0:
+            raise ValueError("regularization must be >= 0")
 
 
 @dataclass

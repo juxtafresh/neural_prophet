@@ -90,9 +90,9 @@ def plot_parameters(m, forecast_in_focus=None, weekly_start=0, yearly_start=0, f
             weight_list = [(key, param.detach().numpy()) for key, param in event_params.items()]
             mode = m.country_holidays_config.mode
             if mode == "additive":
-                additive_events = additive_events + weight_list
+                additive_events += weight_list
             else:
-                multiplicative_events = multiplicative_events + weight_list
+                multiplicative_events += weight_list
 
     # add the user specified events
     if m.events_config is not None:
@@ -101,9 +101,9 @@ def plot_parameters(m, forecast_in_focus=None, weekly_start=0, yearly_start=0, f
             weight_list = [(key, param.detach().numpy()) for key, param in event_params.items()]
             mode = configs.mode
             if mode == "additive":
-                additive_events = additive_events + weight_list
+                additive_events += weight_list
             else:
-                multiplicative_events = multiplicative_events + weight_list
+                multiplicative_events += weight_list
 
     # Add Covariates
     lagged_scalar_regressors = []
@@ -121,21 +121,21 @@ def plot_parameters(m, forecast_in_focus=None, weekly_start=0, yearly_start=0, f
                     }
                 )
 
-    if len(additive_future_regressors) > 0:
+    if additive_future_regressors:
         components.append({"plot_name": "Additive future regressor"})
-    if len(multiplicative_future_regressors) > 0:
+    if multiplicative_future_regressors:
         components.append({"plot_name": "Multiplicative future regressor"})
-    if len(lagged_scalar_regressors) > 0:
+    if lagged_scalar_regressors:
         components.append({"plot_name": "Lagged scalar regressor"})
-    if len(additive_events) > 0:
+    if additive_events:
         additive_events = [(key, weight * m.data_params["y"].scale) for (key, weight) in additive_events]
 
         components.append({"plot_name": "Additive event"})
-    if len(multiplicative_events) > 0:
+    if multiplicative_events:
         components.append({"plot_name": "Multiplicative event"})
 
     npanel = len(components)
-    figsize = figsize if figsize else (10, 3 * npanel)
+    figsize = figsize or (10, 3 * npanel)
     fig, axes = plt.subplots(npanel, 1, facecolor="w", figsize=figsize)
     if npanel == 1:
         axes = [axes]
@@ -162,18 +162,18 @@ def plot_parameters(m, forecast_in_focus=None, weekly_start=0, yearly_start=0, f
         elif plot_name == "lagged weights":
             plot_lagged_weights(weights=comp["weights"], comp_name=comp["comp_name"], focus=comp["focus"], ax=ax)
         else:
-            if plot_name == "additive future regressor":
+            if plot_name == "additive event":
+                weights = additive_events
+            elif plot_name == "additive future regressor":
                 weights = additive_future_regressors
-            elif plot_name == "multiplicative future regressor":
-                multiplicative_axes.append(ax)
-                weights = multiplicative_future_regressors
             elif plot_name == "lagged scalar regressor":
                 weights = lagged_scalar_regressors
-            elif plot_name == "additive event":
-                weights = additive_events
             elif plot_name == "multiplicative event":
                 multiplicative_axes.append(ax)
                 weights = multiplicative_events
+            elif plot_name == "multiplicative future regressor":
+                multiplicative_axes.append(ax)
+                weights = multiplicative_future_regressors
             plot_scalar_weights(weights=weights, plot_name=comp["plot_name"], focus=forecast_in_focus, ax=ax)
     fig.tight_layout()
     # Reset multiplicative axes labels after tight_layout adjustment
@@ -204,9 +204,11 @@ def plot_trend_change(m, ax=None, plot_name="Trend Change", figsize=(10, 6)):
     start = m.data_params["ds"].shift
     scale = m.data_params["ds"].scale
     time_span_seconds = scale.total_seconds()
-    cp_t = []
-    for cp in m.model.config_trend.changepoints:
-        cp_t.append(start + datetime.timedelta(seconds=cp * time_span_seconds))
+    cp_t = [
+        start + datetime.timedelta(seconds=cp * time_span_seconds)
+        for cp in m.model.config_trend.changepoints
+    ]
+
     weights = m.model.get_trend_deltas.detach().numpy()
     # add end-point to force scale to match trend plot
     cp_t.append(start + scale)
@@ -298,10 +300,7 @@ def plot_scalar_weights(weights, plot_name, focus=None, ax=None, figsize=(10, 6)
         if len(weight.shape) > 1:
             raise ValueError("Not scalar " + plot_name)
         if len(weight.shape) == 1 and len(weight) > 1:
-            if focus is not None:
-                weight = weight[focus - 1]
-            else:
-                weight = np.mean(weight)
+            weight = weight[focus - 1] if focus is not None else np.mean(weight)
         values.append(weight)
     artists += ax.bar(names, values, width=0.8, color="#0072B2")
     ax.grid(True, which="major", c="gray", ls="-", lw=1, alpha=0.2)

@@ -33,14 +33,12 @@ class Indonesia(HolidayBase):
 
     def _populate(self, year):
         # New Year's Day
-        if not self.observed and date(year, 1, 1).weekday() in WEEKEND:
-            pass
-        else:
+        if self.observed or date(year, 1, 1).weekday() not in WEEKEND:
             self[date(year, 1, 1)] = "New Year's Day"
 
         # Chinese New Year/ Spring Festival
         name = "Chinese New Year"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             ds = Converter.Lunar2Solar(Lunar(year + offset, 1, 1)).to_date()
             if ds.year == year:
                 self[ds] = name
@@ -76,12 +74,9 @@ class Indonesia(HolidayBase):
             self[date(year, 3, 17)] = name
         elif year == 2019:
             self[date(year, 3, 7)] = name
-        else:
-            pass
-
         # Ascension of the Prophet
         name = "Ascension of the Prophet"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 3, 17)[0]
             y, m, d = to_gregorian(islam_year, 7, 27)
             if y == year:
@@ -93,14 +88,14 @@ class Indonesia(HolidayBase):
 
         # Ascension of Jesus Christ
         name = "Ascension of Jesus"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             ds = easter(year + offset) + rd(days=+39)
             if ds.year == year:
                 self[ds] = name
 
         # Buddha's Birthday
         name = "Buddha's Birthday"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             ds = Converter.Lunar2Solar(Lunar(year + offset, 4, 15)).to_date()
             if ds.year == year:
                 self[ds] = name
@@ -112,7 +107,7 @@ class Indonesia(HolidayBase):
 
         # Eid al-Fitr
         name = "Eid al-Fitr"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 6, 15)[0]
             y1, m1, d1 = to_gregorian(islam_year, 10, 1)
             y2, m2, d2 = to_gregorian(islam_year, 10, 2)
@@ -127,7 +122,7 @@ class Indonesia(HolidayBase):
 
         # Feast of the Sacrifice
         name = "Feast of the Sacrifice"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 8, 22)[0]
             y, m, d = to_gregorian(islam_year, 12, 10)
             if y == year:
@@ -135,7 +130,7 @@ class Indonesia(HolidayBase):
 
         # Islamic New Year
         name = "Islamic New Year"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 9, 11)[0]
             y, m, d = to_gregorian(islam_year + 1, 1, 1)
             if y == year:
@@ -143,7 +138,7 @@ class Indonesia(HolidayBase):
 
         # Birth of the Prophet
         name = "Birth of the Prophet"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 11, 20)[0]
             y, m, d = to_gregorian(islam_year + 1, 3, 12)
             if y == year:
@@ -190,9 +185,6 @@ class Thailand(HolidayBase):
             self[date(year, 3, 1)] = name
         elif year == 2019:
             self[date(year, 2, 19)] = name
-        else:
-            pass
-
         # Chakri Memorial Day
         name = "Chakri Memorial Day"
         april_6 = date(year, 4, 6).weekday()
@@ -212,7 +204,7 @@ class Thailand(HolidayBase):
 
         # Buddha's Birthday
         name = "Buddha's Birthday"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             ds = Converter.Lunar2Solar(Lunar(year + offset, 4, 15)).to_date()
             if ds.year == year:
                 self[ds] = name
@@ -244,18 +236,14 @@ class Thailand(HolidayBase):
             self[date(year, 7, 7)] = name
         elif year == 2010:
             self[date(year, 7, 25)] = name
-        elif year == 2011:
+        elif year in [2011, 2016]:
             self[date(year, 7, 15)] = name
         elif year == 2012:
             self[date(year, 8, 2)] = name
-        elif year == 2013:
+        elif year in [2013, 2015]:
             self[date(year, 7, 30)] = name
-        elif year == 2014:
+        elif year in [2014, 2022]:
             self[date(year, 7, 13)] = name
-        elif year == 2015:
-            self[date(year, 7, 30)] = name
-        elif year == 2016:
-            self[date(year, 7, 15)] = name
         elif year == 2017:
             self[date(year, 7, 9)] = name
         elif year == 2018:
@@ -266,17 +254,12 @@ class Thailand(HolidayBase):
             self[date(year, 7, 5)] = name
         elif year == 2021:
             self[date(year, 7, 24)] = name
-        elif year == 2022:
-            self[date(year, 7, 13)] = name
         elif year == 2023:
             self[date(year, 7, 3)] = name
         elif year == 2024:
             self[date(year, 7, 21)] = name
         elif year == 2025:
             self[date(year, 7, 10)] = name
-        else:
-            pass
-
         # Beginning of Vassa
         warning_msg = "We only support Vassa holiday from 2006 to 2020"
         log.warning(warning_msg)
@@ -311,9 +294,6 @@ class Thailand(HolidayBase):
             self[date(year, 7, 17)] = name
         elif year == 2020:
             self[date(year, 7, 6)] = name
-        else:
-            pass
-
         # The Queen Sirikit's Birthday
         name = "The Queen Sirikit's Birthday"
         self[date(year, 8, 12)] = name
@@ -363,14 +343,14 @@ class Philippines(HolidayBase):
 
         # Maundy Thursday
         name = "Maundy Thursday"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             ds = easter(year + offset) - rd(days=3)
             if ds.year == year:
                 self[ds] = name
 
         # Good Friday
         name = "Good Friday"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             ds = easter(year + offset) - rd(days=2)
             if ds.year == year:
                 self[ds] = name
@@ -389,7 +369,7 @@ class Philippines(HolidayBase):
 
         # Eid al-Fitr
         name = "Eid al-Fitr"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 6, 15)[0]
             y, m, d = to_gregorian(islam_year, 10, 1)
             ds = date(y, m, d) - timedelta(days=1)
@@ -398,7 +378,7 @@ class Philippines(HolidayBase):
 
         # Eid al-Adha, i.e., Feast of the Sacrifice
         name = "Feast of the Sacrifice"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 8, 22)[0]
             y, m, d = to_gregorian(islam_year, 12, 10)
             if y == year:
@@ -476,7 +456,7 @@ class Pakistan(HolidayBase):
 
         # Eid al-Adha, i.e., Feast of the Sacrifice
         name = "Feast of the Sacrifice"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 8, 22)[0]
             y1, m1, d1 = to_gregorian(islam_year, 12, 10)
             y2, m2, d2 = to_gregorian(islam_year, 12, 11)
@@ -490,7 +470,7 @@ class Pakistan(HolidayBase):
 
         # Eid al-Fitr
         name = "Eid al-Fitr"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 6, 15)[0]
             y1, m1, d1 = to_gregorian(islam_year, 10, 1)
             y2, m2, d2 = to_gregorian(islam_year, 10, 2)
@@ -505,7 +485,7 @@ class Pakistan(HolidayBase):
         # Mawlid, Birth of the Prophet
         # 12th day of 3rd Islamic month
         name = "Mawlid"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 11, 20)[0]
             y, m, d = to_gregorian(islam_year, 3, 12)
             if y == year:
@@ -514,7 +494,7 @@ class Pakistan(HolidayBase):
         # Day of Ashura
         # 10th and 11th days of 1st Islamic month
         name = "Day of Ashura"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 10, 1)[0]
             y1, m1, d1 = to_gregorian(islam_year, 1, 10)
             y2, m2, d2 = to_gregorian(islam_year, 1, 11)
@@ -525,7 +505,7 @@ class Pakistan(HolidayBase):
 
         # Shab e Mairaj
         name = "Shab e Mairaj"
-        for offset in range(-1, 2, 1):
+        for offset in range(-1, 2):
             islam_year = from_gregorian(year + offset, 4, 13)[0]
             y, m, d = to_gregorian(islam_year, 7, 27)
             if y == year:

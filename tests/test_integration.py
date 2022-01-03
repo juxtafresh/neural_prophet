@@ -56,24 +56,24 @@ def test_train_eval_test():
 
 def test_trend():
     log.info("testing: Trend")
-    df = pd.read_csv(PEYTON_FILE, nrows=NROWS)
-    m = NeuralProphet(
-        growth="linear",
-        n_changepoints=10,
-        changepoints_range=0.9,
-        trend_reg=1,
-        trend_reg_threshold=False,
-        yearly_seasonality=False,
-        weekly_seasonality=False,
-        daily_seasonality=False,
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-    )
-    # print(m.config_trend)
-    metrics_df = m.fit(df, freq="D")
-    future = m.make_future_dataframe(df, periods=60, n_historic_predictions=60)
-    forecast = m.predict(df=future)
     if PLOT:
+        df = pd.read_csv(PEYTON_FILE, nrows=NROWS)
+        m = NeuralProphet(
+            growth="linear",
+            n_changepoints=10,
+            changepoints_range=0.9,
+            trend_reg=1,
+            trend_reg_threshold=False,
+            yearly_seasonality=False,
+            weekly_seasonality=False,
+            daily_seasonality=False,
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+        )
+        # print(m.config_trend)
+        metrics_df = m.fit(df, freq="D")
+        future = m.make_future_dataframe(df, periods=60, n_historic_predictions=60)
+        forecast = m.predict(df=future)
         m.plot(forecast)
         # m.plot_components(forecast)
         m.plot_parameters()
@@ -111,20 +111,20 @@ def test_custom_changepoints():
 
 def test_no_trend():
     log.info("testing: No-Trend")
-    df = pd.read_csv(PEYTON_FILE, nrows=512)
-    m = NeuralProphet(
-        growth="off",
-        yearly_seasonality=False,
-        weekly_seasonality=False,
-        daily_seasonality=False,
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-    )
-    # m.highlight_nth_step_ahead_of_each_forecast(m.n_forecasts)
-    metrics_df = m.fit(df, freq="D")
-    future = m.make_future_dataframe(df, periods=60, n_historic_predictions=60)
-    forecast = m.predict(df=future)
     if PLOT:
+        df = pd.read_csv(PEYTON_FILE, nrows=512)
+        m = NeuralProphet(
+            growth="off",
+            yearly_seasonality=False,
+            weekly_seasonality=False,
+            daily_seasonality=False,
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+        )
+        # m.highlight_nth_step_ahead_of_each_forecast(m.n_forecasts)
+        metrics_df = m.fit(df, freq="D")
+        future = m.make_future_dataframe(df, periods=60, n_historic_predictions=60)
+        forecast = m.predict(df=future)
         m.plot(forecast)
         m.plot_components(forecast)
         m.plot_parameters()
@@ -435,18 +435,18 @@ def test_plot():
 
 def test_air_data():
     log.info("TEST air_passengers.csv")
-    df = pd.read_csv(AIR_FILE)
-    m = NeuralProphet(
-        n_changepoints=0,
-        yearly_seasonality=2,
-        seasonality_mode="multiplicative",
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-    )
-    metrics = m.fit(df, freq="MS")
-    future = m.make_future_dataframe(df, periods=48, n_historic_predictions=len(df) - m.n_lags)
-    forecast = m.predict(future)
     if PLOT:
+        df = pd.read_csv(AIR_FILE)
+        m = NeuralProphet(
+            n_changepoints=0,
+            yearly_seasonality=2,
+            seasonality_mode="multiplicative",
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+        )
+        metrics = m.fit(df, freq="MS")
+        future = m.make_future_dataframe(df, periods=48, n_historic_predictions=len(df) - m.n_lags)
+        forecast = m.predict(future)
         m.plot(forecast)
         m.plot_components(forecast)
         m.plot_parameters()
@@ -491,18 +491,18 @@ def test_random_seed():
 
 def test_yosemite():
     log.info("TEST Yosemite Temps")
-    df = pd.read_csv(YOS_FILE, nrows=NROWS)
-    m = NeuralProphet(
-        changepoints_range=0.95,
-        n_changepoints=15,
-        weekly_seasonality=False,
-        epochs=EPOCHS,
-        batch_size=BATCH_SIZE,
-    )
-    metrics = m.fit(df, freq="5min")
-    future = m.make_future_dataframe(df, periods=12 * 24, n_historic_predictions=12 * 24)
-    forecast = m.predict(future)
     if PLOT:
+        df = pd.read_csv(YOS_FILE, nrows=NROWS)
+        m = NeuralProphet(
+            changepoints_range=0.95,
+            n_changepoints=15,
+            weekly_seasonality=False,
+            epochs=EPOCHS,
+            batch_size=BATCH_SIZE,
+        )
+        metrics = m.fit(df, freq="5min")
+        future = m.make_future_dataframe(df, periods=12 * 24, n_historic_predictions=12 * 24)
+        forecast = m.predict(future)
         m.plot(forecast)
         m.plot_parameters()
         plt.show()
@@ -514,8 +514,8 @@ def test_model_cv():
     def check_simple(df):
         m = NeuralProphet()
         folds = m.crossvalidation_split_df(df, freq="D", k=5, fold_pct=0.1, fold_overlap_pct=0.5)
-        assert all([70 + i * 5 == len(train) for i, (train, val) in enumerate(folds)])
-        assert all([10 == len(val) for (train, val) in folds])
+        assert all(70 + i * 5 == len(train) for i, (train, val) in enumerate(folds))
+        assert all(len(val) == 10 for (train, val) in folds)
 
     def check_cv(df, freq, n_lags, n_forecasts, k, fold_pct, fold_overlap_pct):
         m = NeuralProphet(
@@ -526,12 +526,15 @@ def test_model_cv():
         total_samples = len(df) - m.n_lags + 2 - (2 * m.n_forecasts)
         per_fold = int(fold_pct * total_samples)
         not_overlap = per_fold - int(fold_overlap_pct * per_fold)
-        assert all([per_fold == len(val) - m.n_lags + 1 - m.n_forecasts for (train, val) in folds])
         assert all(
-            [
-                total_samples - per_fold - (k - i - 1) * not_overlap == len(train) - m.n_lags + 1 - m.n_forecasts
-                for i, (train, val) in enumerate(folds)
-            ]
+            per_fold == len(val) - m.n_lags + 1 - m.n_forecasts
+            for (train, val) in folds
+        )
+
+        assert all(
+            total_samples - per_fold - (k - i - 1) * not_overlap
+            == len(train) - m.n_lags + 1 - m.n_forecasts
+            for i, (train, val) in enumerate(folds)
         )
 
     check_simple(pd.DataFrame({"ds": pd.date_range(start="2017-01-01", periods=100), "y": np.arange(100)}))
@@ -607,7 +610,7 @@ def test_custom_torch_loss():
             alpha = 0.9
             y_diff = target - input
             yhat_diff = input - target
-            loss = (
+            return (
                 (
                     alpha * torch.max(y_diff, torch.zeros_like(y_diff))
                     + (1 - alpha) * torch.max(yhat_diff, torch.zeros_like(yhat_diff))
@@ -615,7 +618,6 @@ def test_custom_torch_loss():
                 .sum()
                 .mean()
             )
-            return loss
 
     loss = Loss()
     df = pd.read_csv(YOS_FILE, nrows=NROWS)
@@ -718,7 +720,7 @@ def test_global_modeling():
             1: "Testing LIST df train / df test - no events, no regressors",
             2: "Testing LIST df train / LIST df test - no events, no regressors",
         }
-        for i in range(0, 3):
+        for i in range(3):
             log.debug(info_input[i])
             m = NeuralProphet(n_forecasts=2, n_lags=10, epochs=EPOCHS, batch_size=BATCH_SIZE)
             metrics = m.fit(train_input[i], freq="D")
@@ -745,7 +747,7 @@ def test_global_modeling():
             2: "Testing LIST df train / LIST df test - df regressors, no events",
             3: "Testing LIST df train / LIST df test - LIST regressors, no events",
         }
-        for i in range(0, 4):
+        for i in range(4):
             log.debug(info_input[i])
             m = NeuralProphet(n_forecasts=2, n_lags=10, epochs=EPOCHS, batch_size=BATCH_SIZE)
             m = m.add_lagged_regressor(names="A")
@@ -774,7 +776,7 @@ def test_global_modeling():
             2: "Testing LIST train / LIST test - df events, no regressors",
             3: "Testing LIST train / LIST test - LIST events, no regressors",
         }
-        for i in range(0, 4):
+        for i in range(4):
             log.debug(info_input[i])
             m = NeuralProphet(n_forecasts=2, n_lags=10, epochs=EPOCHS, batch_size=BATCH_SIZE)
             m.add_events(["playoff"])
@@ -802,19 +804,19 @@ def test_global_modeling():
         m = NeuralProphet(n_lags=10, n_forecasts=5, epochs=EPOCHS, batch_size=BATCH_SIZE)
         m = m.add_events(["playoff"])
         m = m.add_lagged_regressor(names="A")
-        history_df1 = m.create_df_with_events(df1, history_events_df1)
-        history_df2 = m.create_df_with_events(df2, history_events_df2)
-        history_df3 = m.create_df_with_events(df3, history_events_df3)
-        history_df4 = m.create_df_with_events(df4, history_events_df4)
-        metrics = m.fit([history_df1, history_df2], freq="D")
-        future = m.make_future_dataframe(
-            [history_df3, history_df4],
-            n_historic_predictions=True,
-            events_df=[future_events_df3, future_events_df4],
-            regressors_df=[future_regressors_df3, future_regressors_df4],
-        )
-        forecast = m.predict(future)
         if PLOT:
+            history_df1 = m.create_df_with_events(df1, history_events_df1)
+            history_df2 = m.create_df_with_events(df2, history_events_df2)
+            history_df3 = m.create_df_with_events(df3, history_events_df3)
+            history_df4 = m.create_df_with_events(df4, history_events_df4)
+            metrics = m.fit([history_df1, history_df2], freq="D")
+            future = m.make_future_dataframe(
+                [history_df3, history_df4],
+                n_historic_predictions=True,
+                events_df=[future_events_df3, future_events_df4],
+                regressors_df=[future_regressors_df3, future_regressors_df4],
+            )
+            forecast = m.predict(future)
             for frst in forecast:
                 fig = m.PLOT(frst)
                 fig = m.plot_components(frst)

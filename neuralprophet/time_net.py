@@ -149,7 +149,7 @@ class TimeNet(nn.Module):
         if self.n_lags > 0:
             self.ar_net = nn.ModuleList()
             d_inputs = self.n_lags
-            for i in range(self.num_hidden_layers):
+            for _ in range(self.num_hidden_layers):
                 self.ar_net.append(nn.Linear(d_inputs, self.d_hidden, bias=True))
                 d_inputs = self.d_hidden
             self.ar_net.append(nn.Linear(d_inputs, self.n_forecasts, bias=False))
@@ -166,7 +166,7 @@ class TimeNet(nn.Module):
                 d_inputs = self.n_lags
                 if self.config_covar[covar].as_scalar:
                     d_inputs = 1
-                for i in range(self.num_hidden_layers):
+                for _ in range(self.num_hidden_layers):
                     covar_net.append(nn.Linear(d_inputs, self.d_hidden, bias=True))
                     d_inputs = self.d_hidden
                 covar_net.append(nn.Linear(d_inputs, self.n_forecasts, bias=False))
@@ -265,7 +265,7 @@ class TimeNet(nn.Module):
 
         if mode == "additive":
             regressor_params = self.regressor_params["additive"]
-        if mode == "multiplicative":
+        elif mode == "multiplicative":
             regressor_params = self.regressor_params["multiplicative"]
 
         return regressor_params[index]
@@ -292,7 +292,10 @@ class TimeNet(nn.Module):
 
         if self.config_trend.growth != "discontinuous":
             if self.segmentwise_trend:
-                deltas = self.trend_deltas[:] - torch.cat((self.trend_k0, self.trend_deltas[0:-1]))
+                deltas = self.trend_deltas[:] - torch.cat(
+                    (self.trend_k0, self.trend_deltas[:-1])
+                )
+
             else:
                 deltas = self.trend_deltas
             gammas = -self.trend_changepoints_t[1:] * deltas[1:]
@@ -479,8 +482,7 @@ class TimeNet(nn.Module):
                 )
 
         trend = self.trend(t=inputs["time"])
-        out = trend + additive_components + trend.detach() * multiplicative_components
-        return out
+        return trend + additive_components + trend.detach() * multiplicative_components
 
     def compute_components(self, inputs):
         """This method returns the values of each model component.
